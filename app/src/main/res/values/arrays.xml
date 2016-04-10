@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string-array name="house_parts">
+        <item>Keuken</item>
+        <item>GR</item>
+        <item>Zolder</item>
+        <item>Tropen</item>
+        <item>Schuur</item>
+        <item>Grot</item>
+    </string-array>
+</resources>

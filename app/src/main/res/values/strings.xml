@@ -1,0 +1,7 @@
+<resources>
+    <string name="app_name">DOORBEL COFFEE</string>
+    <string name="button_house">Doorbel HOUSE</string>
+    <string name="button_specific">Doorbel</string>
+    <string name="check_base">Bel</string>
+    <string name="check_array_title">Parts of DS4</string>
+</resources>
