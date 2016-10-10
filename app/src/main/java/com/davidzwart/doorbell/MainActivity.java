@@ -1,5 +1,6 @@
 package com.davidzwart.doorbell;
 
+import android.app.Activity;
 import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
@@ -19,24 +20,34 @@ import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
-
+import android.widget.LinearLayout;
 
 import com.google.android.gms.common.ConnectionResult;
 import com.google.android.gms.common.GoogleApiAvailability;
 
+import static com.davidzwart.doorbell.VolleyBall.AUTH_FLAG_KEY;
+
 public class MainActivity extends AppCompatActivity
         implements NavigationView.OnNavigationItemSelectedListener{
 
-    //Request GCM & log-tag
+    // Request GCM & log-tag
     private static final String TAG = "MainActivity";
-
-    //GCM activity elements & setup variables
+    // GCM activity elements & setup variables
     private BroadcastReceiver mRegistrationBroadcastReceiver;
     private boolean isReceiverRegistered;
     private static final int PLAY_SERVICES_RESOLUTION_REQUEST = 9000;
 
-    //UDP client
+    // Login status
+    private static boolean MAIN_AUTH_FLAG;
+    LinearLayout RegisterForm;
+    MenuItem ToolbarConnected;
+
+    // UDP client
     UDPClient UDPjetser = new UDPClient();
+
+    // Other activity ID's
+    private static final int REGISTER_ACTIVITY_ID = 2;
+    private static final int OTHER_ID = 3;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -45,6 +56,8 @@ public class MainActivity extends AppCompatActivity
 
         Toolbar toolbar = (Toolbar) findViewById(R.id.toolbar);
         setSupportActionBar(toolbar);
+
+        RegisterForm = (LinearLayout) findViewById(R.id.RegisterContainer);
 
         DrawerLayout drawer = (DrawerLayout) findViewById(R.id.drawer_layout);
         ActionBarDrawerToggle toggle = new ActionBarDrawerToggle(
@@ -74,7 +87,7 @@ public class MainActivity extends AppCompatActivity
         registerReceiver(); // Register BroadcastReceiver
 
         if (checkPlayServices()) {
-            // Start IntentService to register this application with GCM.
+            // Start IntentService to register this application with webserver.
             Intent intent = new Intent(this, RegistrationIntentService.class);
             startService(intent);
         }
@@ -92,8 +105,17 @@ public class MainActivity extends AppCompatActivity
 
     @Override
     public boolean onCreateOptionsMenu(Menu menu) {
+        Log.d(TAG, "onCreateOptionsMenu: " + "Im running");
         // Inflate the menu; this adds items to the action bar if it is present.
-        getMenuInflater().inflate(R.menu.activity_main_options, menu);
+        getMenuInflater().inflate(R.menu.activity_main_toolbar_quickaccess, menu);
+
+        ToolbarConnected = menu.findItem(R.id.server_connected);
+
+        // Solve problem of onCreatoptionsmenu being run after onresume & updateRegisterForm.
+        if (! MAIN_AUTH_FLAG) {
+            ToolbarConnected.setIcon(R.drawable.ic_cred_not);
+        }
+
         return true;
     }
 
@@ -105,7 +127,7 @@ public class MainActivity extends AppCompatActivity
         int id = item.getItemId();
 
         //noinspection SimplifiableIfStatement
-        if (id == R.id.action_settings) {
+        if (id == R.id.toolbar_settings) {
             return true;
         }
 
@@ -132,6 +154,10 @@ public class MainActivity extends AppCompatActivity
     @Override
     protected void onResume() {
         super.onResume();
+
+        // Check if user is signed in
+        updateRegisterForm();
+
         registerReceiver();
     }
 
@@ -142,11 +168,71 @@ public class MainActivity extends AppCompatActivity
         super.onPause();
     }
 
+    @Override
+    protected void onActivityResult(int requestCode, int resultCode, Intent data) {
+        super.onActivityResult(requestCode, resultCode, data);
+        switch(requestCode) {
+            case (REGISTER_ACTIVITY_ID) : {
+                if (resultCode == Activity.RESULT_OK) {
+                    String result = data.getStringExtra("Result");
+                    MAIN_AUTH_FLAG = data.getBooleanExtra(AUTH_FLAG_KEY, false);
+                    Snackbar.make(findViewById(R.id.content_struct), result, Snackbar.LENGTH_LONG)
+                            .setAction("Action", null).show();
+                    updateRegisterForm();
+                }
+                else {
+                    Snackbar.make(findViewById(R.id.content_struct), "Unknown intent code returned.", Snackbar.LENGTH_LONG)
+                            .setAction("Action", null).show();
+                }
+                break;
+            }
+        }
+    }
+
+    // Update signed in status
+    private void updateRegisterStatus(){
+
+        SharedPreferences prefs = this.getSharedPreferences(
+                "com.davidzwart.doorbell", Context.MODE_PRIVATE);
+
+        // Check if AUTH_FLAG is set in shared preferences
+        MAIN_AUTH_FLAG = prefs.getBoolean(AUTH_FLAG_KEY, false);
+
+        // TODO check if auth is still valid
+    }
+
+    // Update Register form
+    private void updateRegisterForm(){
+
+        // Get shared preference for sign-in status
+        updateRegisterStatus();
+
+        // Apply (in)visibility when signed in or not
+        if (MAIN_AUTH_FLAG == true) {
+            RegisterForm.setVisibility(View.GONE);
+
+            // If calling function is onResume the menuitem is null
+            try {
+                ToolbarConnected.setVisible(true);
+            } catch (Exception e) {
+                Log.d(TAG, "updateRegisterForm: ToolbarConnected not initialized yet");
+            }
+        }
+        else {
+            RegisterForm.setVisibility(View.VISIBLE);
+            try {
+                ToolbarConnected.setVisible(false);
+            } catch (Exception e) {
+                Log.d(TAG, "updateRegisterForm: ToolbarConnected not initialized yet");
+            }
+        }
+    }
+
     /** Open Register intent+activity **/
     public void registerUser(View v) {
         //Register intent
         Intent intentLogin = new Intent(MainActivity.this, RegisterActivity.class);
-        startActivity(intentLogin);
+        startActivityForResult(intentLogin, REGISTER_ACTIVITY_ID);
     }
 
     /** UDP code **/

@@ -18,19 +18,11 @@
             android:layout_height="?attr/actionBarSize"
             android:background="?attr/colorPrimary"
             android:popupTheme="@android:style/ThemeOverlay.Material.Light">
-            <ImageView
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_gravity="right"
-                android:id="@+id/submitEditNote"
-                android:src="@android:drawable/ic_menu_send"
-                android:layout_alignParentEnd="true"
-                android:layout_alignParentRight="true" />
         </android.support.v7.widget.Toolbar>
 
     </android.support.design.widget.AppBarLayout>
 
-    <include layout="@layout/content_main" />
+    <include layout="@layout/activity_main_content" />
 
     <android.support.design.widget.FloatingActionButton
         android:id="@+id/fab_turf_beer"

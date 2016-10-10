@@ -2,13 +2,19 @@
 <menu xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto">
     <item
-        android:id="@+id/action_settings"
+        android:id="@+id/toolbar_settings"
         android:orderInCategory="100"
         android:title="@string/action_settings"
         app:showAsAction="never" />
     <item
-        android:id="@+id/miCompose"
+        android:id="@+id/server_connected"
+        android:icon="@drawable/ic_cred_lock"
+        app:showAsAction="always"
+        android:title="Connected"
+        android:enabled="false"/>
+     <!-- <item
+        android:id="@+id/doorBell"
         android:icon="@drawable/ic_alarm"
         app:showAsAction="ifRoom"
-        android:title="Compose"/>
+        android:title="Doorbel DS4"/> -->
 </menu>

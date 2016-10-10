@@ -15,12 +15,20 @@
         android:theme="@style/AppTheme.NoActionBar">
         <activity
             android:name="com.davidzwart.doorbell.MainActivity"
-            android:label="@string/app_name">
+            android:label="@string/app_name" >
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
-
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
+        </activity>
+
+        <activity
+            android:name="com.davidzwart.doorbell.RegisterActivity"
+            android:label="@string/title_activity_login"
+            android:parentActivityName="com.davidzwart.doorbell.MainActivity">
+            <meta-data
+                android:name="android.support.PARENT_ACTIVITY"
+                android:value="com.davidzwart.doorbell.MainActivity" />
         </activity>
 
         <!-- [START gcm_receiver] -->
@@ -59,10 +67,6 @@
         <service
             android:name="com.davidzwart.doorbell.RegistrationIntentService"
             android:exported="false" />
-
-        <activity
-            android:name="com.davidzwart.doorbell.RegisterActivity"
-            android:label="@string/title_activity_login" />
 
     </application>
 

@@ -5,42 +5,58 @@ import android.animation.AnimatorListenerAdapter;
 import android.annotation.TargetApi;
 import android.content.Context;
 import android.support.design.widget.Snackbar;
+import android.support.v7.app.ActionBar;
 import android.support.v7.app.AppCompatActivity;
-import android.os.AsyncTask;
 import android.os.Build;
 import android.os.Bundle;
+import android.support.v7.widget.Toolbar;
 import android.text.TextUtils;
+import android.util.Log;
+import android.view.Menu;
+import android.view.MenuItem;
 import android.view.View;
 import android.view.View.OnClickListener;
 import android.widget.Button;
+import android.widget.Spinner;
 import android.widget.TextView;
-
-import com.davidzwart.doorbell.R;
 
 /**
  * A signup screen that offers login via GCM token.
  */
 public class RegisterActivity extends AppCompatActivity {
 
-    private static final String[] DUMMY_CREDENTIALS = new String[]{
-            "David:hello", "Karel:world"
-    };
     /**
      * Keep track of the login task to ensure we can cancel it if requested.
      */
-    private UserLoginTask mAuthTask = null;
 
     // UI references.
-    private TextView mNameView;
+    private Spinner mNameView;
+    private TextView pWordView;
     private View mProgressView;
     private View mLoginFormView;
+
+    private String TAG = "REGISTER";
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_login);
+
+        // my_child_toolbar is defined in the layout file
+        Toolbar myChildToolbar =
+                (Toolbar) findViewById(R.id.toolbar);
+        setSupportActionBar(myChildToolbar);
+
+        // Get a support ActionBar corresponding to this toolbar
+        ActionBar action_bar = getSupportActionBar();
+
+        // Enable the Up button
+        action_bar.setDisplayHomeAsUpEnabled(true);
+
         // Set up the login form.
-        mNameView = (TextView) findViewById(R.id.user);
+        mNameView = (Spinner) findViewById(R.id.spinnerUsers);
+        mNameView.getSelectedItem();
+        pWordView = (TextView) findViewById(R.id.passWord);
 
         Button mNameSignInButton = (Button) findViewById(R.id.name_sign_in_button);
         mNameSignInButton.setOnClickListener(new OnClickListener() {
@@ -54,13 +70,44 @@ public class RegisterActivity extends AppCompatActivity {
         mProgressView = findViewById(R.id.login_progress);
     }
 
+    @Override
+    protected void onStart(){
+        super.onStart();
+        RetrieveUsers(findViewById(R.id.login_layout));
+    }
+
     /** GCM beer-turf code **/
-    public void btnRetrieveUsers(View v) {
+    public void RetrieveUsers(View v) {
         Context c = getApplicationContext();
 
-        // Execute HTTP Volley StringRequest
+        // TODO carry this across whole app (Singleton)
         VolleyBall request = new VolleyBall();
+
+        // Execute HTTP Volley StringRequest
         request.VolleyIt(this, v, "users/");
+    }
+
+    @Override
+    public boolean onCreateOptionsMenu(Menu menu) {
+        // Inflate the menu; this adds items to the action bar if it is present.
+        getMenuInflater().inflate(R.menu.activity_login_toolbar_quickaccess, menu);
+        return true;
+    }
+
+    @Override
+    public boolean onOptionsItemSelected(MenuItem item) {
+        // Handle action bar item clicks here. The action bar will
+        // automatically handle clicks on the Home/Up button, so long
+        // as you specify a parent activity in AndroidManifest.xml.
+        int id = item.getItemId();
+
+        //noinspection SimplifiableIfStatement
+        if (id == R.id.refreshUsers) {
+            RetrieveUsers(findViewById(R.id.login_layout));
+            return true;
+        }
+
+        return super.onOptionsItemSelected(item);
     }
 
     /**
@@ -69,41 +116,79 @@ public class RegisterActivity extends AppCompatActivity {
      * gives error.
      */
     private void requestAPIaccess() {
-        if (mAuthTask != null) {
+        String AuthName;
+
+        // Store values at the time of the signup attempt.
+        try {
+            AuthName = mNameView.getSelectedItem().toString();
+        } catch (NullPointerException e) {
+            Log.d(TAG, "Empty list! " + e.toString());
+            Snackbar.make(findViewById(R.id.login_layout), "Please sync users and select your name.", Snackbar.LENGTH_LONG)
+                    .setAction("Action", null).show();
+            return;
+        } catch (Exception e){
+            Log.d(TAG, "requestAPIaccess: " + e.toString());
+            Snackbar.make(findViewById(R.id.login_layout), "Unkown username error. Can't login.", Snackbar.LENGTH_LONG)
+                    .setAction("Action", null).show();
             return;
         }
 
-        // Reset errors.
-        mNameView.setError(null);
-
-        // Store values at the time of the signup attempt.
-        String name = mNameView.getText().toString();
+        String AuthWord;
+        try {
+            AuthWord = pWordView.getText().toString();
+        } catch (Exception e){
+            Log.d(TAG, "requestAPIaccess: " + e.toString());
+            Snackbar.make(findViewById(R.id.login_layout), "Unknown password error. Can't login.", Snackbar.LENGTH_LONG)
+                    .setAction("Action", null).show();
+            return;
+        }
 
         boolean cancel = false;
         View focusView = null;
 
         // Check for a non-empty name
-        if (TextUtils.isEmpty(name)) {
-            mNameView.setError(getString(R.string.error_field_required));
+        if (TextUtils.isEmpty(AuthName)) {
             focusView = mNameView;
             cancel = true;
-        } else if (!isNameValid(name)) {
-            mNameView.setError(getString(R.string.error_invalid_name));
+        } else if (!isNameValid(AuthName)) {
             focusView = mNameView;
+            cancel = true;
+        }
+
+        if (TextUtils.isEmpty(AuthWord)) {
+            focusView = pWordView;
+            cancel = true;
+        } else if (!isNameValid(AuthWord)) {
+            focusView = pWordView;
             cancel = true;
         }
 
         if (cancel) {
             // There was an error; don't attempt login and focus the first
             // form field with an error.
+            Snackbar.make(findViewById(R.id.login_layout), "Couldn't sign in.", Snackbar.LENGTH_LONG)
+                    .setAction("Action", null).show();
+            if (focusView == pWordView) {
+                pWordView.setError("Empty field.");
+            }
             focusView.requestFocus();
+            return;
         } else {
-            // Show a progress spinner, and kick off a background task to
-            // perform the user login attempt.
-            showProgress(true);
-            mAuthTask = new UserLoginTask(name);
-            mAuthTask.execute((Void) null);
+            // Give Volley control over UI, assume activity is known
+            AuthUser(findViewById(R.id.login_layout), AuthName, AuthWord);
         }
+    }
+
+    /** Authenticate user on server **/
+    public void AuthUser(View v, String UserName, String PassWord) {
+
+        // Make sure LowerCase characters are sent.
+        UserName = UserName.toLowerCase();
+
+        // Execute HTTP Volley StringRequest
+        VolleyBall request = new VolleyBall();
+        request.setAuthDetails(UserName, PassWord);
+        request.VolleyIt(this, v, "auth/");
     }
 
     private boolean isNameValid(String name) {
@@ -115,7 +200,7 @@ public class RegisterActivity extends AppCompatActivity {
      * Shows the progress UI and hides the login form.
      */
     @TargetApi(Build.VERSION_CODES.HONEYCOMB_MR2)
-    private void showProgress(final boolean show) {
+    public void showProgress(final boolean show) {
         // On Honeycomb MR2 we have the ViewPropertyAnimator APIs, which allow
         // for very easy animations. If available, use these APIs to fade-in
         // the progress spinner.
@@ -147,56 +232,5 @@ public class RegisterActivity extends AppCompatActivity {
         }
     }
 
-    /**
-     * Represents an asynchronous login/registration task used to authenticate
-     * the user.
-     */
-    public class UserLoginTask extends AsyncTask<Void, Void, Boolean> {
-
-        private final String mName;
-
-        UserLoginTask(String name) {
-            mName = name;
-        }
-
-        @Override
-        protected Boolean doInBackground(Void... params) {
-            // TODO: attempt authentication against a network service.
-
-            try {
-                // Simulate network access.
-                Thread.sleep(2000);
-            } catch (InterruptedException e) {
-                return false;
-            }
-
-            for (String credential : DUMMY_CREDENTIALS) {
-                String[] pieces = credential.split(":");
-                if (pieces[0].equals(mName)) {
-                    // Account exists, return true if the password matches.
-                    return true;
-                }
-            }
-
-            // TODO: register the new account here.
-            return true;
-        }
-
-        @Override
-        protected void onPostExecute(final Boolean success) {
-            mAuthTask = null;
-            showProgress(false);
-
-            if (success) {
-                finish();
-            }
-        }
-
-        @Override
-        protected void onCancelled() {
-            mAuthTask = null;
-            showProgress(false);
-        }
-    }
 }
 

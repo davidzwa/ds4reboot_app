@@ -12,10 +12,10 @@
     <!-- Strings related to app -->
 
     <!-- Strings related to login -->
-    <string name="prompt_name">Name</string>
-    <string name="prompt_password">Password</string>
-    <string name="action_sign_in">Sign in or register</string>
-    <string name="action_sign_in_short">Sign in</string>
+    <string name="prompt_name">Select name</string>
+    <string name="prompt_password">Type password</string>
+    <string name="action_sign_in">Register device</string>
+    <string name="action_sign_in_short">Register on DS4</string>
     <string name="error_invalid_name">This email address is invalid</string>
     <string name="error_field_required">This field is required</string>
 
